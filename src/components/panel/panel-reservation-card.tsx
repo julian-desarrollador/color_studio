@@ -5,6 +5,7 @@ import {
   CalendarClock,
   Check,
   Circle,
+  FileText,
   MessageCircle,
   Palette,
   Smartphone,
@@ -18,6 +19,7 @@ import {
   isReservationTimeFocused,
 } from "@/lib/booking/panel-now-focus";
 import { trackPanelClick } from "@/lib/analytics/track";
+import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
 import { panelDurationLabel } from "@/lib/treatments/catalog";
 
 import type { PanelReservation } from "@/components/panel/panel-types";
@@ -143,6 +145,11 @@ export const PanelReservationCard = forwardRef<HTMLElement, PanelReservationCard
     const duration = panelDurationLabel(r.treatmentName, r.category);
     const customerName = r.customerName.trim() || "Cliente";
     const canManage = r.reservationStatus === "confirmed" || r.reservationStatus === "pending_payment";
+    const clientPhoneDigits = canonicalPhoneDigitsAR(r.customerPhone);
+    const fichaHref =
+      clientPhoneDigits.length >= 8
+        ? `/panel-turnos/clientes/${encodeURIComponent(clientPhoneDigits)}`
+        : null;
 
     return (
       <article
@@ -204,6 +211,17 @@ export const PanelReservationCard = forwardRef<HTMLElement, PanelReservationCard
               Reservó el usuario
             </p>
           )}
+
+          {fichaHref ? (
+            <Link
+              href={fichaHref}
+              onClick={() => trackPanelClick("ficha_desde_card")}
+              className="mt-2 inline-flex cursor-pointer items-center gap-1.5 text-[13px] font-medium text-[#B88E2F] underline-offset-2 hover:underline"
+            >
+              <FileText className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+              Ver ficha
+            </Link>
+          ) : null}
 
           <div className="mt-3">
             <span
