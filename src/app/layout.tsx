@@ -21,7 +21,7 @@ const playfair = Playfair_Display({
 });
 
 /** Query en favicons / PWA; subir versión al cambiar iconos (cache de WhatsApp / navegadores). */
-const ASSET_V = "5";
+const ASSET_V = "6";
 
 /** Vista previa al compartir URL (1200×630, generada con `npm run icons`). */
 const OG_IMAGE_PATH = "/og-image.jpg";

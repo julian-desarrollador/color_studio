@@ -4,6 +4,8 @@ import { Wind } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { BRAND_LOGO_SRC } from "@/lib/brand";
+
 export default function PromotionsPage() {
   return (
     <div className="min-h-screen bg-[#111111] text-white">
@@ -21,7 +23,7 @@ export default function PromotionsPage() {
 
         <div className="overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_10px_24px_rgba(0,0,0,0.45)]">
           <Image
-            src="/logo_colorstudio.webp"
+            src={BRAND_LOGO_SRC}
             alt="Colorstudio Moscardini — servicios"
             width={900}
             height={1200}

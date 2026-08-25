@@ -6,7 +6,7 @@ export const BRAND_CLIENT_NAME = "Yanina Moscardini";
 export const BRAND_TAGLINE = "Color · Corte · Tratamientos";
 export const BRAND_SUBTITLE = "Necochea";
 
-export const BRAND_LOGO_SRC = "/logo_colorstudio.webp";
+export const BRAND_LOGO_SRC = "/logo_colorstudio_new.webp";
 export const BRAND_HERO_IMAGE_SRC = BRAND_LOGO_SRC;
 
 /** Dígitos internacionales para wa.me (sin + ni espacios). */

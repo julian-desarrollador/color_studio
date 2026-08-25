@@ -1,5 +1,5 @@
 /**
- * Genera favicons, iconos PWA y og:image desde public/logo_colorstudio.webp
+ * Genera favicons, iconos PWA y og:image desde public/logo_colorstudio_new.webp
  * Uso: npm run icons
  */
 import fs from "node:fs";
@@ -9,7 +9,7 @@ import sharp from "sharp";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const input = path.join(root, "public", "logo_colorstudio.webp");
+const input = path.join(root, "public", "logo_colorstudio_new.webp");
 const outDir = path.join(root, "public");
 const appDir = path.join(root, "src", "app");
 

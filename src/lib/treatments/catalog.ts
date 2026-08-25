@@ -1,3 +1,5 @@
+import { BRAND_LOGO_SRC } from "@/lib/brand";
+
 /** Categorías para filtrar en la app de turnos. */
 export const TREATMENT_CATEGORIES = ["Servicios"] as const;
 
@@ -31,7 +33,7 @@ export const SALON_TREATMENTS: SalonTreatment[] = [
     category: "Servicios",
     durationLabel: PROVISIONAL_DURATION_LABEL,
     durationMinutes: 45,
-    imageUrl: "/logo_colorstudio.webp",
+    imageUrl: BRAND_LOGO_SRC,
     priceLabel: PRICE_PENDING_LABEL,
   },
   {
@@ -42,7 +44,7 @@ export const SALON_TREATMENTS: SalonTreatment[] = [
     category: "Servicios",
     durationLabel: PROVISIONAL_DURATION_LABEL,
     durationMinutes: 90,
-    imageUrl: "/logo_colorstudio.webp",
+    imageUrl: BRAND_LOGO_SRC,
     priceLabel: PRICE_PENDING_LABEL,
   },
   {
@@ -53,7 +55,7 @@ export const SALON_TREATMENTS: SalonTreatment[] = [
     category: "Servicios",
     durationLabel: PROVISIONAL_DURATION_LABEL,
     durationMinutes: 60,
-    imageUrl: "/logo_colorstudio.webp",
+    imageUrl: BRAND_LOGO_SRC,
     priceLabel: PRICE_PENDING_LABEL,
   },
   {
@@ -64,7 +66,7 @@ export const SALON_TREATMENTS: SalonTreatment[] = [
     category: "Servicios",
     durationLabel: PROVISIONAL_DURATION_LABEL,
     durationMinutes: 150,
-    imageUrl: "/logo_colorstudio.webp",
+    imageUrl: BRAND_LOGO_SRC,
     priceLabel: PRICE_PENDING_LABEL,
   },
   {
@@ -75,7 +77,7 @@ export const SALON_TREATMENTS: SalonTreatment[] = [
     category: "Servicios",
     durationLabel: PROVISIONAL_DURATION_LABEL,
     durationMinutes: 120,
-    imageUrl: "/logo_colorstudio.webp",
+    imageUrl: BRAND_LOGO_SRC,
     priceLabel: PRICE_PENDING_LABEL,
   },
 ];
