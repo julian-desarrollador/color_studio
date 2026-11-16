@@ -2,6 +2,7 @@
 
 import {
   CalendarDays,
+  Check,
   ChevronLeft,
   ChevronRight,
   Lock,
@@ -24,6 +25,7 @@ import {
   panelDaySelected,
   panelPage,
 } from "@/components/panel/panel-ui";
+import { weekdayPlural } from "@/lib/booking/agenda-block-ui";
 import { agendaBlockAppliesToDateKey } from "@/lib/booking/agenda-blocks-shared";
 import {
   PANEL_WEEK_LETTERS,
@@ -86,11 +88,28 @@ function whatsAppChatUrl(
   return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
 }
 
-export function PanelTurnosDashboard() {
+function openedDateParts(dateKey: string | null): { year: number; month: number; dateKey: string } | null {
+  if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return { year, month, dateKey };
+}
+
+export function PanelTurnosDashboard({
+  initialDateKey = null,
+  initialBlockedNotice = false,
+}: {
+  /** Día a abrir (ej. al volver de bloquear un horario). */
+  initialDateKey?: string | null;
+  /** Recién se guardó un bloqueo: mostrar aviso de confirmación. */
+  initialBlockedNotice?: boolean;
+}) {
   const router = useRouter();
   const now = useMemo(() => new Date(), []);
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const opened = openedDateParts(initialDateKey);
+  const [year, setYear] = useState(opened?.year ?? now.getFullYear());
+  const [month, setMonth] = useState(opened?.month ?? now.getMonth() + 1);
   const [list, setList] = useState<PanelReservation[]>([]);
   const [agendaBlocks, setAgendaBlocks] = useState<PanelAgendaBlock[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,12 +119,16 @@ export function PanelTurnosDashboard() {
   const [cancelConfirmReservationId, setCancelConfirmReservationId] = useState<string | null>(null);
   const [showCancelled, setShowCancelled] = useState(false);
   const [clockTick, setClockTick] = useState(0);
+  const [blockedNotice, setBlockedNotice] = useState(initialBlockedNotice);
+  const [blockToDelete, setBlockToDelete] = useState<PanelAgendaBlock | null>(null);
+  const [deletingBlock, setDeletingBlock] = useState(false);
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const grid = useMemo(() => buildPanelMonthGrid(year, month), [year, month]);
   const todayKey = todayYmd(now);
 
   const [selectedKey, setSelectedKey] = useState<string>(() => {
+    if (opened) return opened.dateKey;
     const key = todayYmd(now);
     const [y, m] = key.split("-").map(Number);
     if (y === now.getFullYear() && m === now.getMonth() + 1) return key;
@@ -174,6 +197,11 @@ export function PanelTurnosDashboard() {
     return m;
   }, [visibleReservations, agendaBlocks, grid]);
 
+  const blockGroupSize = useMemo(() => {
+    if (!blockToDelete?.groupId) return 0;
+    return agendaBlocks.filter((b) => b.groupId === blockToDelete.groupId).length;
+  }, [blockToDelete, agendaBlocks]);
+
   const cancelledCountSelectedDay = useMemo(
     () => list.filter((r) => r.dateKey === selectedKey && r.reservationStatus === "cancelled").length,
     [list, selectedKey],
@@ -209,6 +237,14 @@ export function PanelTurnosDashboard() {
   }, []);
 
   useEffect(() => {
+    if (!initialBlockedNotice) return;
+    // Sacar `bloqueado=1` de la URL para que el aviso no vuelva a salir al recargar.
+    router.replace(initialDateKey ? `/panel-turnos?fecha=${initialDateKey}` : "/panel-turnos", { scroll: false });
+    const t = window.setTimeout(() => setBlockedNotice(false), 5000);
+    return () => window.clearTimeout(t);
+  }, [initialBlockedNotice, initialDateKey, router]);
+
+  useEffect(() => {
     if (loading || !scrollTargetId) return;
     const el = cardRefs.current[scrollTargetId];
     if (!el) return;
@@ -222,15 +258,22 @@ export function PanelTurnosDashboard() {
     setRefreshTick((t) => t + 1);
   }, []);
 
-  async function handleDeleteBlock(blockId: string) {
-    if (!window.confirm("¿Eliminar este bloqueo de agenda?")) return;
-    const res = await fetch(`/api/panel-turnos/agenda-blocks?id=${encodeURIComponent(blockId)}`, {
-      method: "DELETE",
-      credentials: "same-origin",
-    });
-    if (!res.ok) return;
-    trackPanelClick("delete_block", "confirmed");
-    reloadMonth();
+  async function handleDeleteBlock(target: { id: string } | { groupId: string }) {
+    const qs =
+      "groupId" in target ? `groupId=${encodeURIComponent(target.groupId)}` : `id=${encodeURIComponent(target.id)}`;
+    setDeletingBlock(true);
+    try {
+      const res = await fetch(`/api/panel-turnos/agenda-blocks?${qs}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      if (!res.ok) return;
+      trackPanelClick("delete_block", "groupId" in target ? "confirmed_group" : "confirmed");
+      setBlockToDelete(null);
+      reloadMonth();
+    } finally {
+      setDeletingBlock(false);
+    }
   }
 
   async function handleCancelReservation(reservationId: string) {
@@ -298,7 +341,7 @@ export function PanelTurnosDashboard() {
               Agregar turno
             </Link>
             <Link
-              href="/panel-turnos/bloqueo"
+              href={`/panel-turnos/bloqueo?fecha=${selectedKey}`}
               onClick={() => trackPanelClick("bloquear_horario")}
               className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 text-[14px] font-semibold text-amber-900 transition hover:bg-amber-100"
             >
@@ -429,7 +472,7 @@ export function PanelTurnosDashboard() {
                     key={`block-${row.item.id}`}
                     block={row.item}
                     selectedDateKey={selectedKey}
-                    onDelete={() => void handleDeleteBlock(row.item.id)}
+                    onDelete={() => setBlockToDelete(row.item)}
                   />
                 );
               }
@@ -509,6 +552,75 @@ export function PanelTurnosDashboard() {
                 {cancellingReservationId === cancelConfirmReservationId ? "Cancelando..." : "Sí, cancelar"}
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {blockToDelete ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={() => {
+            if (!deletingBlock) setBlockToDelete(null);
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-montserrat text-[20px] font-bold text-gray-900">Quitar bloqueo</h3>
+            <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
+              {blockToDelete.recurrence?.type === "weekly"
+                ? `Este bloqueo se repite todos los ${weekdayPlural(blockToDelete.anchorDateKey)}. Se quita de todas las semanas y ese horario vuelve a estar disponible para reservar.`
+                : "Ese horario vuelve a estar disponible para reservar."}
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              {blockToDelete.groupId && blockGroupSize > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={deletingBlock}
+                    onClick={() => void handleDeleteBlock({ id: blockToDelete.id })}
+                    className="h-11 cursor-pointer rounded-xl border border-red-200 bg-white text-[14px] font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+                  >
+                    Quitar solo este
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deletingBlock}
+                    onClick={() => void handleDeleteBlock({ groupId: blockToDelete.groupId as string })}
+                    className="h-11 cursor-pointer rounded-xl border border-red-200 bg-red-50 text-[14px] font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+                  >
+                    Quitar todos los que guardé juntos
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  disabled={deletingBlock}
+                  onClick={() => void handleDeleteBlock({ id: blockToDelete.id })}
+                  className="h-11 cursor-pointer rounded-xl border border-red-200 bg-red-50 text-[14px] font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+                >
+                  {deletingBlock ? "Quitando…" : "Sí, quitar bloqueo"}
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={deletingBlock}
+                onClick={() => setBlockToDelete(null)}
+                className="h-11 cursor-pointer rounded-xl border border-gray-200 text-[14px] font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+              >
+                Volver
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {blockedNotice ? (
+        <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4" role="status">
+          <div className="flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-3 text-[15px] font-semibold text-white shadow-xl">
+            <Check className="h-5 w-5 text-amber-300" strokeWidth={2.6} />
+            Listo, horario bloqueado
           </div>
         </div>
       ) : null}

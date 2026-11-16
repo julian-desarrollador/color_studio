@@ -125,6 +125,23 @@ export function canPlaceReservationSlot(
   return true;
 }
 
+/**
+ * ¿Algún minuto del servicio cae en un bloqueo de agenda (cupo 0)?
+ * Recorre minuto a minuto: horarios y duraciones son en minutos enteros, así que no se escapa
+ * ningún bloqueo, aunque sea más corto que el turno. Se usa el intervalo del servicio sin la
+ * brecha entre turnos: un turno puede terminar justo cuando empieza un bloqueo.
+ */
+export function intervalTouchesAgendaBlock(
+  service: IntervalMs,
+  getEffectiveCap?: (instantMs: number) => number,
+): boolean {
+  if (!getEffectiveCap) return false;
+  for (let t = service.startMs; t < service.endMs; t += 60_000) {
+    if (getEffectiveCap(Math.min(t + 30_000, (t + service.endMs) / 2)) <= 0) return true;
+  }
+  return false;
+}
+
 export function filterSlotsBySalonCapacity(
   slots: string[],
   dateKey: string,
@@ -135,6 +152,7 @@ export function filterSlotsBySalonCapacity(
   return slots.filter((timeLocal) => {
     const slot = slotIntervalMs(dateKey, timeLocal, durationMinutes);
     if (!slot) return false;
+    if (intervalTouchesAgendaBlock(slot, getEffectiveCap)) return false;
     return canPlaceReservationSlot(dateKey, intervalWithTurnGap(slot), busy, getEffectiveCap);
   });
 }
@@ -146,6 +164,7 @@ export async function reservationWouldExceedSalonCapacity(
   getEffectiveCap?: (instantMs: number) => number,
   excludeReservationId?: ObjectId,
 ): Promise<boolean> {
+  if (intervalTouchesAgendaBlock(candidate, getEffectiveCap)) return true;
   const busy = await loadBusyIntervalsMs(db, dateKey, excludeReservationId);
   return !canPlaceReservationSlot(dateKey, intervalWithTurnGap(candidate), busy, getEffectiveCap);
 }

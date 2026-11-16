@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { listAgendaBlocksForCalendarMonth, type SalonAgendaBlockDoc } from "@/lib/booking/agenda-blocks";
+import { reservationDurationMinutesFromDoc } from "@/lib/booking/slot-overlap";
 import { getDb } from "@/lib/mongodb";
 import { verifyPanelCookie } from "@/lib/panel-turnos-auth";
 import { listReservationsForCalendarMonth } from "@/lib/reservations/admin-queries";
@@ -17,6 +18,7 @@ function serialize(r: ReservationDoc) {
     dateKey: r.dateKey,
     timeLocal: r.timeLocal,
     displayDate: r.displayDate,
+    durationMinutes: reservationDurationMinutesFromDoc(r),
     customerName: r.customerName,
     customerPhone: r.customerPhone,
     reservationStatus: r.reservationStatus,
@@ -65,6 +67,7 @@ function serializeAgendaBlock(b: SalonAgendaBlockDoc) {
     scope: b.scope,
     recurrence: b.recurrence ?? null,
     notes: b.notes ?? null,
+    groupId: b.groupId ?? null,
   };
 }
 

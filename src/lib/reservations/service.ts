@@ -12,7 +12,12 @@ import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
 import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
 import { enforceSalonCapacityForScope } from "@/lib/booking/booking-capacity";
-import { canPlaceReservationSlot, reservationWouldExceedSalonCapacity, slotIntervalMs } from "@/lib/booking/slot-overlap";
+import {
+  canPlaceReservationSlot,
+  intervalTouchesAgendaBlock,
+  reservationWouldExceedSalonCapacity,
+  slotIntervalMs,
+} from "@/lib/booking/slot-overlap";
 import {
   findSalonTreatmentById,
   isValidServiceSelection,
@@ -590,7 +595,10 @@ export async function rescheduleReservation(
         code: "SLOT_OVERLAP",
       };
     }
-  } else if (!canPlaceReservationSlot(newKey, interval, [], capGetter)) {
+  } else if (
+    intervalTouchesAgendaBlock(interval, capGetter) ||
+    !canPlaceReservationSlot(newKey, interval, [], capGetter)
+  ) {
     return {
       error: "Ese horario cae en un bloqueo de agenda.",
       code: "SLOT_UNAVAILABLE",

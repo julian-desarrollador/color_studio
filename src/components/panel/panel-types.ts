@@ -7,6 +7,8 @@ export type PanelReservation = {
   dateKey: string;
   timeLocal: string;
   displayDate: string;
+  /** Duración total del turno en minutos (ausente en respuestas viejas). */
+  durationMinutes?: number;
   customerName: string;
   customerPhone: string;
   reservationStatus: string;
@@ -27,4 +29,5 @@ export type PanelAgendaBlock = {
   scope: string;
   recurrence: { type: "weekly"; untilDateKey?: string | null } | null;
   notes?: string | null;
+  groupId?: string | null;
 };

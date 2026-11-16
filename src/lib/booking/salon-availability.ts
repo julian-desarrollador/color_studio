@@ -23,6 +23,9 @@ export const SALON_TREATMENT_OPTIONS: SalonTreatmentOption[] = SALON_TREATMENTS.
 
 const SLOT_STEP_MINUTES = 30;
 
+/** Intervalo entre inicios de turno (grilla de 30 min). */
+export const SALON_SLOT_STEP_MINUTES = SLOT_STEP_MINUTES;
+
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
@@ -140,6 +143,17 @@ export function getLastServiceEndMinutesForDate(dateKey: string): number {
     return 13 * 60;
   }
   return lastServiceEndMinutesForWeekday(weekday);
+}
+
+/**
+ * Apertura del salón ese día, en minutos (0 si está cerrado).
+ * Sale del horario semanal: no depende de si la fecha ya pasó ni de feriados.
+ */
+export function getSalonOpenMinutesForDate(dateKey: string): number {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  if (!y || !m || !d) return 0;
+  const first = slotsForWeekday(new Date(y, m - 1, d).getDay())[0];
+  return first ? hhmmToMinutes(first) : 0;
 }
 
 /** @deprecated Usar `getLastServiceEndMinutesForDate` por día. */
